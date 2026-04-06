@@ -482,6 +482,14 @@ function initAuth() {
     scope: SCOPES,
     callback: onTokenResponse
   });
+
+  // 자동 로그인 시도 (조용히)
+  tryAutoLogin();
+}
+
+function tryAutoLogin() {
+  if (!tokenClient) return;
+  tokenClient.requestAccessToken({ prompt: '' });
 }
 
 function handleLogin() {
@@ -498,24 +506,53 @@ function handleLogin() {
     return;
   }
 
-  tokenClient.requestAccessToken();
+  tokenClient.requestAccessToken({ prompt: 'consent' });
 }
 
 function onTokenResponse(resp) {
   if (resp.error) {
-    toast('로그인 실패: ' + resp.error);
+    // 자동 로그인 실패는 무시 (로그인 화면 유지)
+    if (resp.error === 'user_logged_out' || resp.error === 'access_denied') return;
     return;
   }
 
   accessToken = resp.access_token;
+
+  // 토큰 만료 전 자동 갱신 (50분 후)
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => {
+    tokenClient.requestAccessToken({ prompt: '' });
+  }, 50 * 60 * 1000);
+
   fetchUserInfo();
+}
+
+let refreshTimer = null;
+
+// API 호출 래퍼: 401이면 자동 재인증 후 재시도
+async function authedFetch(url, options = {}) {
+  options.headers = { ...options.headers, Authorization: `Bearer ${accessToken}` };
+  let res = await fetch(url, options);
+  if (res.status === 401) {
+    // 토큰 갱신 시도
+    await new Promise(resolve => {
+      const origCallback = tokenClient.callback;
+      tokenClient.callback = (resp) => {
+        if (!resp.error) accessToken = resp.access_token;
+        resolve();
+      };
+      tokenClient.requestAccessToken({ prompt: '' });
+      setTimeout(() => { tokenClient.callback = origCallback; }, 5000);
+    });
+    options.headers.Authorization = `Bearer ${accessToken}`;
+    res = await fetch(url, options);
+  }
+  return res;
 }
 
 async function fetchUserInfo() {
   try {
-    const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
+    const res = await authedFetch('https://www.googleapis.com/oauth2/v2/userinfo');
     const info = await res.json();
     document.getElementById('userName').textContent = info.email || info.name || '';
     showApp();
@@ -552,19 +589,15 @@ async function loadFromDrive() {
   setSyncing(true);
   try {
     // Find existing file
-    const searchRes = await fetch(
-      `${DRIVE_API}/files?q=name='${DATA_FILE}' and trashed=false&fields=files(id,name)`, {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
+    const searchRes = await authedFetch(
+      `${DRIVE_API}/files?q=name='${DATA_FILE}' and trashed=false&fields=files(id,name)`);
     const searchData = await searchRes.json();
 
     if (searchData.files && searchData.files.length > 0) {
       driveFileId = searchData.files[0].id;
       // Download content
-      const dlRes = await fetch(
-        `${DRIVE_API}/files/${driveFileId}?alt=media`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
+      const dlRes = await authedFetch(
+        `${DRIVE_API}/files/${driveFileId}?alt=media`);
       posts = await dlRes.json();
     } else {
       posts = [];
@@ -587,17 +620,14 @@ async function saveToDrive() {
 
     if (driveFileId) {
       // Update existing
-      await fetch(
+      await authedFetch(
         `https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
           method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: content
         });
     } else {
-      // Create new in appData
+      // Create new
       const metadata = {
         name: DATA_FILE
       };
@@ -606,10 +636,9 @@ async function saveToDrive() {
       form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
       form.append('file', new Blob([content], { type: 'application/json' }));
 
-      const res = await fetch(
+      const res = await authedFetch(
         'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}` },
           body: form
         });
       if (!res.ok) {
