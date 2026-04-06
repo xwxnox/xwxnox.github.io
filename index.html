@@ -454,7 +454,7 @@
    CONFIG — 여기에 본인의 Client ID를 넣으세요
    ═══════════════════════════════════════ */
 const CLIENT_ID = '983035227918-br09723gh2pppuj9sdu6ri4gf0t8gkk0.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.email';
 const TELEGRAPH = 'https://api.telegra.ph';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const DATA_FILE = 'ink_posts.json';
@@ -553,7 +553,7 @@ async function loadFromDrive() {
   try {
     // Find existing file
     const searchRes = await fetch(
-      `${DRIVE_API}/files?spaces=appDataFolder&q=name='${DATA_FILE}'&fields=files(id,name)`, {
+      `${DRIVE_API}/files?q=name='${DATA_FILE}' and trashed=false&fields=files(id,name)`, {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
     const searchData = await searchRes.json();
@@ -599,8 +599,7 @@ async function saveToDrive() {
     } else {
       // Create new in appData
       const metadata = {
-        name: DATA_FILE,
-        parents: ['appDataFolder']
+        name: DATA_FILE
       };
 
       const form = new FormData();
@@ -613,6 +612,10 @@ async function saveToDrive() {
           headers: { Authorization: `Bearer ${accessToken}` },
           body: form
         });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error?.message || res.status);
+      }
       const data = await res.json();
       driveFileId = data.id;
     }
