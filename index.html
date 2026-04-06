@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ink.</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f4f0;
+    --fg: #111;
+    --muted: #999;
+    --border: #ddd8d0;
+    --accent: #b84c2e;
+    --code-bg: #eceae5;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Newsreader', serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.85;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 600px; margin: 0 auto; padding: 0 20px; }
+
+  /* ── auth screen ── */
+  .auth-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    text-align: center;
+  }
+
+  .auth-screen h1 {
+    font-size: 2.4rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .auth-screen p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-bottom: 36px;
+  }
+
+  .google-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Newsreader', serif;
+    font-size: 0.88rem;
+    padding: 10px 28px;
+    background: var(--fg);
+    color: var(--bg);
+    border: 1px solid var(--fg);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+  }
+
+  .google-btn:hover { background: var(--accent); border-color: var(--accent); }
+
+  .google-btn svg { width: 16px; height: 16px; }
+
+  /* ── header ── */
+  header {
+    padding: 44px 0 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .header-left { display: flex; align-items: baseline; gap: 12px; }
+
+  header h1 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+
+  .user-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .user-name:hover { color: var(--accent); }
+
+  .tabs {
+    display: flex;
+    gap: 16px;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .tabs span {
+    cursor: pointer;
+    transition: color 0.15s;
+    padding-bottom: 2px;
+  }
+
+  .tabs span:hover { color: var(--fg); }
+  .tabs span.on { color: var(--fg); border-bottom: 1px solid var(--fg); }
+
+  /* ── views ── */
+  .view { display: none; padding: 36px 0 60px; }
+  .view.active { display: block; }
+
+  .app { display: none; }
+  .app.active { display: block; }
+
+  /* ── write ── */
+  #v-write input,
+  #v-write textarea {
+    width: 100%;
+    font-family: 'Newsreader', serif;
+    font-size: 0.95rem;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 0;
+    color: var(--fg);
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.85;
+  }
+
+  #v-write input:focus,
+  #v-write textarea:focus { border-color: var(--fg); }
+
+  #v-write input::placeholder,
+  #v-write textarea::placeholder { color: var(--muted); }
+
+  #v-write textarea { resize: vertical; min-height: 240px; }
+
+  .write-foot {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  button {
+    font-family: 'Newsreader', serif;
+    font-size: 0.82rem;
+    padding: 7px 28px;
+    background: var(--fg);
+    color: var(--bg);
+    border: 1px solid var(--fg);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+
+  button:hover { background: var(--accent); border-color: var(--accent); }
+
+  /* ── result ── */
+  .result {
+    display: none;
+    margin-top: 28px;
+    padding: 20px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+  }
+
+  .result.show { display: block; }
+
+  .result-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .result-url {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    word-break: break-all;
+    color: var(--accent);
+    cursor: pointer;
+    line-height: 1.6;
+  }
+
+  .result-url:hover { text-decoration: underline; }
+
+  .result-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 16px;
+  }
+
+  .result-actions span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .result-actions span:hover { color: var(--fg); }
+
+  /* ── list ── */
+  .post-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .post-item:hover { opacity: 0.65; }
+
+  .post-item .date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .post-item .title {
+    font-size: 0.95rem;
+    margin-top: 2px;
+  }
+
+  /* ── reader ── */
+  .reader-back {
+    font-size: 0.82rem;
+    color: var(--muted);
+    cursor: pointer;
+    display: inline-block;
+    margin-bottom: 24px;
+  }
+
+  .reader-back:hover { color: var(--fg); }
+
+  .article-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+
+  .article-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  .article-body {
+    font-size: 0.95rem;
+    line-height: 2;
+  }
+
+  .article-body p { margin-bottom: 16px; }
+  .article-body h3 { font-size: 1.15rem; font-weight: 600; margin: 32px 0 12px; }
+  .article-body h4 { font-size: 1.02rem; font-weight: 600; margin: 24px 0 10px; }
+  .article-body blockquote {
+    border-left: 2px solid var(--border);
+    padding-left: 16px;
+    color: var(--muted);
+    font-style: italic;
+    margin: 20px 0;
+  }
+  .article-body code {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.84em;
+    background: var(--code-bg);
+    padding: 2px 5px;
+  }
+  .article-body pre {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    background: var(--code-bg);
+    padding: 16px;
+    overflow-x: auto;
+    margin: 20px 0;
+    line-height: 1.6;
+    border: 1px solid var(--border);
+  }
+  .article-body a { color: var(--accent); }
+  .article-body img { max-width: 100%; margin: 16px 0; }
+  .article-body ul, .article-body ol { padding-left: 20px; margin-bottom: 16px; }
+  .article-body li { margin-bottom: 4px; }
+  .article-body hr { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+  /* ── empty ── */
+  .empty-msg {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.88rem;
+    padding: 48px 0;
+  }
+
+  /* ── sync indicator ── */
+  .sync-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #8bc48a;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  .sync-dot.syncing {
+    background: var(--accent);
+    animation: pulse 0.8s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── toast ── */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    padding: 8px 20px;
+    background: var(--fg);
+    color: var(--bg);
+    opacity: 0;
+    transition: opacity 0.25s;
+    pointer-events: none;
+    z-index: 99;
+  }
+
+  .toast.show { opacity: 1; }
+
+  /* ── anim ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade { animation: fadeUp 0.3s ease forwards; }
+
+  /* ── setup guide ── */
+  .setup-note {
+    margin-top: 24px;
+    padding: 16px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--muted);
+    display: none;
+  }
+
+  .setup-note code {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    background: var(--bg);
+    padding: 1px 4px;
+  }
+
+  /* ── responsive ── */
+  @media (max-width: 480px) {
+    header { padding: 32px 0 20px; flex-direction: column; gap: 12px; }
+    .article-title { font-size: 1.25rem; }
+    .auth-screen h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ════ AUTH SCREEN ════ -->
+  <div class="auth-screen" id="authScreen">
+    <h1>ink.</h1>
+    <p>Telegraph에 쓰고, Google Drive에 동기화하고, 어디서든 읽는다.</p>
+    <button class="google-btn" onclick="handleLogin()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Google로 시작하기
+    </button>
+
+    <div class="setup-note" id="setupNote">
+      처음 사용하시나요? 아래 설정이 필요합니다.<br><br>
+      1. <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>에서 프로젝트 생성<br>
+      2. OAuth 2.0 클라이언트 ID 생성 (웹 앱)<br>
+      3. 승인된 JavaScript 원본에 사이트 주소 추가<br>
+      4. 승인된 리디렉션 URI에 사이트 주소 추가<br>
+      5. Google Drive API 활성화<br>
+      6. 아래 HTML 파일에서 <code>CLIENT_ID</code> 값을 교체<br>
+    </div>
+  </div>
+
+  <!-- ════ APP ════ -->
+  <div class="app" id="app">
+    <header>
+      <div class="header-left">
+        <h1 onclick="go('list')">ink.</h1>
+        <span class="user-name" id="userName" onclick="handleLogout()"></span>
+        <span class="sync-dot" id="syncDot"></span>
+      </div>
+      <div class="tabs">
+        <span data-v="list" class="on" onclick="go('list')">글 목록</span>
+        <span data-v="write" onclick="go('write')">쓰기</span>
+      </div>
+    </header>
+
+    <!-- list -->
+    <div class="view active" id="v-list">
+      <div id="postList"></div>
+    </div>
+
+    <!-- write -->
+    <div class="view" id="v-write">
+      <input type="text" id="wTitle" placeholder="제목">
+      <textarea id="wBody" placeholder="내용을 작성하세요...&#10;&#10;## 소제목&#10;> 인용&#10;**굵게**  `코드`"></textarea>
+      <div class="write-foot">
+        <button onclick="publish()">발행</button>
+      </div>
+      <div class="result" id="pubResult">
+        <div class="result-label">발행 완료</div>
+        <div class="result-url" id="pubUrl" onclick="copyUrl()"></div>
+        <div class="result-actions">
+          <span onclick="copyUrl()">URL 복사</span>
+          <span onclick="openUrl()">Telegraph에서 보기</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- reader -->
+    <div class="view" id="v-read">
+      <span class="reader-back" onclick="go('list')">← 목록으로</span>
+      <div class="article-title" id="aTitle"></div>
+      <div class="article-meta" id="aMeta"></div>
+      <div class="article-body" id="aBody"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Google Identity Services -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<script>
+/* ═══════════════════════════════════════
+   CONFIG — 여기에 본인의 Client ID를 넣으세요
+   ═══════════════════════════════════════ */
+const CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+const TELEGRAPH = 'https://api.telegra.ph';
+const DRIVE_API = 'https://www.googleapis.com/drive/v3';
+const DATA_FILE = 'ink_posts.json';
+
+/* ═══════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════ */
+let accessToken = null;
+let posts = [];
+let driveFileId = null;
+let lastPublished = null;
+let tokenClient = null;
+
+/* ═══════════════════════════════════════
+   AUTH
+   ═══════════════════════════════════════ */
+function initAuth() {
+  if (typeof google === 'undefined' || !google.accounts) {
+    setTimeout(initAuth, 200);
+    return;
+  }
+
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: onTokenResponse
+  });
+}
+
+function handleLogin() {
+  if (CLIENT_ID.startsWith('YOUR_')) {
+    document.getElementById('setupNote').style.display = 'block';
+    toast('Client ID를 먼저 설정해 주세요');
+    return;
+  }
+
+  if (!tokenClient) {
+    toast('Google 로딩 중...');
+    initAuth();
+    setTimeout(handleLogin, 500);
+    return;
+  }
+
+  tokenClient.requestAccessToken();
+}
+
+function onTokenResponse(resp) {
+  if (resp.error) {
+    toast('로그인 실패: ' + resp.error);
+    return;
+  }
+
+  accessToken = resp.access_token;
+  fetchUserInfo();
+}
+
+async function fetchUserInfo() {
+  try {
+    const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const info = await res.json();
+    document.getElementById('userName').textContent = info.email || info.name || '';
+    showApp();
+    await loadFromDrive();
+  } catch (e) {
+    toast('사용자 정보 실패');
+  }
+}
+
+function handleLogout() {
+  if (confirm('로그아웃하시겠습니까?')) {
+    google.accounts.oauth2.revoke(accessToken);
+    accessToken = null;
+    posts = [];
+    driveFileId = null;
+    document.getElementById('authScreen').style.display = '';
+    document.getElementById('app').classList.remove('active');
+  }
+}
+
+function showApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+}
+
+/* ═══════════════════════════════════════
+   GOOGLE DRIVE (appData folder)
+   ═══════════════════════════════════════ */
+function setSyncing(on) {
+  document.getElementById('syncDot').classList.toggle('syncing', on);
+}
+
+async function loadFromDrive() {
+  setSyncing(true);
+  try {
+    // Find existing file
+    const searchRes = await fetch(
+      `${DRIVE_API}/files?spaces=appDataFolder&q=name='${DATA_FILE}'&fields=files(id,name)`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+    const searchData = await searchRes.json();
+
+    if (searchData.files && searchData.files.length > 0) {
+      driveFileId = searchData.files[0].id;
+      // Download content
+      const dlRes = await fetch(
+        `${DRIVE_API}/files/${driveFileId}?alt=media`, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+      posts = await dlRes.json();
+    } else {
+      posts = [];
+      await saveToDrive();
+    }
+
+    renderList();
+  } catch (e) {
+    toast('Drive 로드 실패: ' + e.message);
+    posts = [];
+    renderList();
+  }
+  setSyncing(false);
+}
+
+async function saveToDrive() {
+  setSyncing(true);
+  try {
+    const content = JSON.stringify(posts);
+
+    if (driveFileId) {
+      // Update existing
+      await fetch(
+        `https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: content
+        });
+    } else {
+      // Create new in appData
+      const metadata = {
+        name: DATA_FILE,
+        parents: ['appDataFolder']
+      };
+
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      form.append('file', new Blob([content], { type: 'application/json' }));
+
+      const res = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: form
+        });
+      const data = await res.json();
+      driveFileId = data.id;
+    }
+  } catch (e) {
+    toast('Drive 저장 실패: ' + e.message);
+  }
+  setSyncing(false);
+}
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════ */
+function go(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('v-' + v).classList.add('active');
+  document.querySelectorAll('.tabs span').forEach(s => {
+    s.classList.toggle('on', s.dataset.v === v);
+  });
+  if (v === 'list') renderList();
+}
+
+/* ═══════════════════════════════════════
+   WRITE + PUBLISH
+   ═══════════════════════════════════════ */
+async function publish() {
+  const title = document.getElementById('wTitle').value.trim();
+  const body = document.getElementById('wBody').value.trim();
+  if (!title || !body) return toast('제목과 내용을 입력해 주세요');
+
+  toast('발행 중...');
+
+  try {
+    // 1. Temp Telegraph account
+    const acc = await telegraphGet(`/createAccount?short_name=ink_${Date.now()}&author_name=anonymous`);
+    const token = acc.access_token;
+
+    // 2. Create page
+    const nodes = textToNodes(body);
+    const page = await telegraphPost('/createPage', {
+      access_token: token,
+      title: title,
+      author_name: 'anonymous',
+      content: nodes,
+      return_content: false
+    });
+
+    lastPublished = page;
+
+    // 3. Save to index
+    posts.unshift({
+      path: page.path,
+      url: page.url,
+      title: title,
+      date: new Date().toISOString().slice(0, 10)
+    });
+
+    // 4. Sync to Drive
+    await saveToDrive();
+
+    document.getElementById('pubUrl').textContent = page.url;
+    document.getElementById('pubResult').classList.add('show');
+    toast('발행 완료 — 동기화됨');
+  } catch (e) {
+    toast('오류: ' + e.message);
+  }
+}
+
+function copyUrl() {
+  if (!lastPublished) return;
+  navigator.clipboard.writeText(lastPublished.url).then(() => toast('복사됨'));
+}
+
+function openUrl() {
+  if (lastPublished) window.open(lastPublished.url, '_blank');
+}
+
+/* ═══════════════════════════════════════
+   LIST
+   ═══════════════════════════════════════ */
+function renderList() {
+  const el = document.getElementById('postList');
+
+  if (posts.length === 0) {
+    el.innerHTML = '<div class="empty-msg fade">아직 글이 없습니다</div>';
+    return;
+  }
+
+  el.innerHTML = posts.map((p, i) => `
+    <div class="post-item fade" style="animation-delay:${i * 0.04}s" onclick="readPost('${esc(p.path)}')">
+      <div class="date">${p.date || ''}</div>
+      <div class="title">${esc(p.title)}</div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════
+   READER
+   ═══════════════════════════════════════ */
+async function readPost(path) {
+  go('read');
+
+  const meta = posts.find(p => p.path === path);
+  document.getElementById('aTitle').textContent = meta ? meta.title : '';
+  document.getElementById('aMeta').textContent = meta ? meta.date : '';
+  document.getElementById('aBody').innerHTML = '<span style="color:var(--muted)">불러오는 중...</span>';
+
+  try {
+    const page = await telegraphGet(`/getPage/${path}?return_content=true`);
+    document.getElementById('aTitle').textContent = page.title;
+    document.getElementById('aMeta').textContent =
+      (page.author_name || '') + (page.views !== undefined ? '  ·  ' + page.views + ' views' : '');
+    document.getElementById('aBody').innerHTML = renderNodes(page.content);
+    document.getElementById('aBody').classList.add('fade');
+    setTimeout(() => document.getElementById('aBody').classList.remove('fade'), 400);
+  } catch (e) {
+    document.getElementById('aBody').innerHTML = '불러오기 실패: ' + esc(e.message);
+  }
+}
+
+/* ═══════════════════════════════════════
+   TELEGRAPH API
+   ═══════════════════════════════════════ */
+async function telegraphGet(path) {
+  const r = await fetch(TELEGRAPH + path);
+  const d = await r.json();
+  if (!d.ok) throw new Error(d.error || 'API error');
+  return d.result;
+}
+
+async function telegraphPost(path, body) {
+  const r = await fetch(TELEGRAPH + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const d = await r.json();
+  if (!d.ok) throw new Error(d.error || 'API error');
+  return d.result;
+}
+
+/* ═══════════════════════════════════════
+   MARKDOWN → TELEGRAPH NODES
+   ═══════════════════════════════════════ */
+function textToNodes(text) {
+  const lines = text.split('\n');
+  const nodes = [];
+
+  for (const line of lines) {
+    const t = line.trimEnd();
+    if (t === '') continue;
+    if (/^### /.test(t)) nodes.push({ tag: 'h4', children: parseInline(t.slice(4)) });
+    else if (/^## /.test(t)) nodes.push({ tag: 'h3', children: parseInline(t.slice(3)) });
+    else if (/^> /.test(t)) nodes.push({ tag: 'blockquote', children: [{ tag: 'p', children: parseInline(t.slice(2)) }] });
+    else if (/^---$/.test(t)) nodes.push({ tag: 'hr' });
+    else if (/^- /.test(t)) nodes.push({ tag: 'p', children: parseInline('· ' + t.slice(2)) });
+    else nodes.push({ tag: 'p', children: parseInline(t) });
+  }
+
+  return nodes.length ? nodes : [{ tag: 'p', children: [''] }];
+}
+
+function parseInline(text) {
+  const parts = [];
+  const re = /(\*\*(.+?)\*\*|`(.+?)`)/g;
+  let last = 0, m;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    if (m[2]) parts.push({ tag: 'b', children: [m[2]] });
+    else if (m[3]) parts.push({ tag: 'code', children: [m[3]] });
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts.length ? parts : [text];
+}
+
+/* ═══════════════════════════════════════
+   TELEGRAPH NODES → HTML
+   ═══════════════════════════════════════ */
+function renderNodes(nodes) {
+  if (!nodes) return '';
+  return nodes.map(n => {
+    if (typeof n === 'string') return esc(n);
+    if (!n.tag) return '';
+    const ok = ['a','aside','b','blockquote','br','code','em','figcaption','figure','h3','h4','hr','i','iframe','img','li','ol','p','pre','s','strong','u','ul'];
+    if (!ok.includes(n.tag)) return '';
+    let a = '';
+    if (n.attrs) {
+      if (n.attrs.href) a += ` href="${esc(n.attrs.href)}" target="_blank"`;
+      if (n.attrs.src) a += ` src="${esc(n.attrs.src)}"`;
+    }
+    if (['br','hr','img'].includes(n.tag)) return `<${n.tag}${a}>`;
+    return `<${n.tag}${a}>${n.children ? renderNodes(n.children) : ''}</${n.tag}>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════
+   UTIL
+   ═══════════════════════════════════════ */
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+/* ═══════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════ */
+window.addEventListener('load', initAuth);
+</script>
+</body>
+</html>
