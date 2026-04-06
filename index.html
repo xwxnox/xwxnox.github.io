@@ -454,7 +454,7 @@
    CONFIG — 여기에 본인의 Client ID를 넣으세요
    ═══════════════════════════════════════ */
 const CLIENT_ID = '983035227918-br09723gh2pppuj9sdu6ri4gf0t8gkk0.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email';
 const TELEGRAPH = 'https://api.telegra.ph';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const DATA_FILE = 'ink_posts.json';
@@ -743,10 +743,14 @@ async function telegraphGet(path) {
 }
 
 async function telegraphPost(path, body) {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(body)) {
+    params.append(k, typeof v === 'object' ? JSON.stringify(v) : v);
+  }
   const r = await fetch(TELEGRAPH + path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
   });
   const d = await r.json();
   if (!d.ok) throw new Error(d.error || 'API error');
